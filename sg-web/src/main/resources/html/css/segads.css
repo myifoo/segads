@@ -1,0 +1,10 @@
+.command-area {
+    position: relative;
+    width: 1000px;
+    height:38%;
+    margin: 0 auto;
+    font-family: Tahoma, Verdana, Arial, sans-serif;
+    text-align:center;
+}
+
+.top-menu {height:100px}
