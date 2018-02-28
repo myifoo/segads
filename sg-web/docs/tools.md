@@ -40,5 +40,10 @@ curl -v -i -H "Content-Type: application/json" http://www.example.com/users
 
 > curl -i -X POST -F 'file=@/Users/kent/my_file.txt' -F 'name=a_file_name'
 
+特别操蛋的一点：
+> curl.exe -i -X POST -F "file=@data.csv" -F "name=data" http://localhost/segads/data/create?id=001
+
+在linux环境中可以使用单引号来引用参数数据，但是在windows环境下，必须用双引号！
+
 1. curl -X DELETE "localhost:9998/session"
 2. curl.exe -X POST "http://localhost/segads/session/anteng/general/property" -d "key1=aaaa&key2=bbbbb"

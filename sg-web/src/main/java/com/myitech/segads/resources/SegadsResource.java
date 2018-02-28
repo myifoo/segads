@@ -2,14 +2,16 @@ package com.myitech.segads.resources;
 
 import com.myitech.segads.Segads;
 import com.myitech.segads.core.events.LifeCycleEvent;
+import com.myitech.segads.services.DatapointsService;
 import com.myitech.segads.services.SegadsService;
-import org.glassfish.hk2.api.messaging.Topic;
+import org.codehaus.jettison.json.JSONArray;
 import org.glassfish.jersey.server.mvc.Viewable;
 
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,6 +23,17 @@ public class SegadsResource {
 
     @Inject
     SegadsService segadsService;
+
+    @Inject
+    DatapointsService datapointsService;
+
+
+    @GET
+    @Path("/command")
+    @Produces(MediaType.APPLICATION_JSON)
+    public JSONArray command(@QueryParam("cmd") String cmd) {
+        return datapointsService.get("001");
+    }
 
     @GET
     @Path("info")

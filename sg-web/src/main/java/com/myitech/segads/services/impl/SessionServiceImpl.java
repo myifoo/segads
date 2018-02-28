@@ -3,11 +3,9 @@ package com.myitech.segads.services.impl;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Row;
-import com.myitech.segads.datastore.Datastore;
+import com.myitech.segads.core.db.Datastore;
 import com.myitech.segads.services.SessionService;
-import com.myitech.segads.utils.SimpleJSONParser;
 import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,45 +84,45 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void property(String key, String type, Map<String, String> properties) {
-        // TODO handle exception later
-        // Step 1: check column names
-        ResultSet rows = datastore.getColumnNames("session");
-        Set<String> columns = new HashSet<>();
-
-        for (Row row : rows) {
-            columns.add(row.getString("column_name"));
-        }
-
-        List<String> list = new ArrayList<>();
-
-        for (String property : properties.keySet()) {
-            if (!columns.contains(property)) {
-                list.add(property);
-            }
-        }
-
-        // Step 2: atler tables
-        if (!list.isEmpty()) {
-            for (String column : list) {
-                datastore.execute("ALTER TABLE session ADD "+column+" text;");
-            }
-        }
-
-        // Step 3: insert data
-        StringBuilder cql = new StringBuilder("INSERT INTO session ");
-        StringBuilder names = new StringBuilder("(id, type");
-        StringBuilder values = new StringBuilder("('"+key+"', '"+type+"'");
-        for (Map.Entry entry : properties.entrySet()) {
-            names.append(", ").append(entry.getKey()).append(" ");
-            values.append(", '").append(entry.getValue()).append("'");
-        }
-
-        names.append(") ");
-        values.append(") ");
-
-        cql.append(names).append(" values ").append(values).append(";");
-
-        datastore.execute(cql.toString());
+//        // TODO handle exception later
+//        // Step 1: check column names
+//        ResultSet rows = db.getColumnNames("session");
+//        Set<String> columns = new HashSet<>();
+//
+//        for (Row row : rows) {
+//            columns.add(row.getString("column_name"));
+//        }
+//
+//        List<String> list = new ArrayList<>();
+//
+//        for (String property : properties.keySet()) {
+//            if (!columns.contains(property)) {
+//                list.add(property);
+//            }
+//        }
+//
+//        // Step 2: atler tables
+//        if (!list.isEmpty()) {
+//            for (String column : list) {
+//                db.execute("ALTER TABLE session ADD "+column+" text;");
+//            }
+//        }
+//
+//        // Step 3: insert data
+//        StringBuilder cql = new StringBuilder("INSERT INTO session ");
+//        StringBuilder names = new StringBuilder("(id, type");
+//        StringBuilder values = new StringBuilder("('"+key+"', '"+type+"'");
+//        for (Map.Entry entry : properties.entrySet()) {
+//            names.append(", ").append(entry.getKey()).append(" ");
+//            values.append(", '").append(entry.getValue()).append("'");
+//        }
+//
+//        names.append(") ");
+//        values.append(") ");
+//
+//        cql.append(names).append(" values ").append(values).append(";");
+//
+//        db.execute(cql.toString());
     }
 
     @Override

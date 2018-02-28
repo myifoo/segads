@@ -4,6 +4,9 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.google.common.eventbus.EventBus;
 import com.myitech.segads.core.WebServer;
+import com.myitech.segads.core.db.CassandraSchema;
+import com.myitech.segads.exceptions.DatabaseInstallFailedException;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,10 +18,16 @@ import java.util.concurrent.CountDownLatch;
 /**
  * Segads class.
  *
+ *      1. 事件处理： EventBus
+ *      2. 属性管理： Properties
+ *
  */
 public class Segads {
     private static final Arguments arguments = new Arguments();
+    private static Properties properties;
+
     private final static CountDownLatch s_shutdownObject = new CountDownLatch(1);
+
     /**
      *  使用guava的EventBus来处理事件的发布-订阅；HK2也有自己的Event模块，但是由于jersey-hk2对hk2封装时，并没有提供event特性，
      *  导致要使用HK2的Topic来发布-订阅事件变的很曲折，主要是因为HK2的Event模块是基于其DI容器来实现的。guava的EventBus很独立，
@@ -32,6 +41,14 @@ public class Segads {
 
     static public void post(Object event) {
         eventBus.post(event);
+    }
+
+    static public String getProperty(String key) {
+        return (String)properties.get(key);
+    }
+
+    static public void setProperties(Properties source) {
+        properties = source;
     }
 
     public static void main(String[] args) throws IOException {
@@ -48,12 +65,12 @@ public class Segads {
             System.exit(0);
         }
 
-        if (arguments.helpMessage || arguments.help) {
+        if (arguments.helpMessage || arguments.help || arguments.operationCommand == null) {
             commander.usage();
             System.exit(0);
         }
 
-        if (!arguments.propertiesFile.isEmpty()) {
+        if (!StringUtils.isEmpty(arguments.propertiesFile)) {
             PROPERTIES_FILE = arguments.propertiesFile;
         }
 
@@ -66,9 +83,11 @@ public class Segads {
             properties.load(in);
         }
 
+        Segads.setProperties(properties);
+
         if (arguments.operationCommand.equals("start")) {
             try {
-                final WebServer webServer = WebServer.newInstance(properties);
+                final WebServer webServer = WebServer.getInstance();
                 Thread webThread= new Thread(webServer,"WebServer");
 
                 Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -81,16 +100,23 @@ public class Segads {
                 webThread.start();
                 webThread.join();
 
-                logger.info("\n----------------- Segads started -----------------\n");
+                logger.info("........................... Segads started ...........................");
 
-                //main.runMissTest();
                 waitForShutdown();
             } catch (Exception e) {
                 logger.error("Failed starting up services", e);
-                //main.stopServices();
                 System.exit(0);
             } finally {
-                logger.info("\n----------------- Segads service is now down! -----------------\n");
+                logger.info("........................... Segads service is now down!...........................");
+            }
+        } else if (arguments.operationCommand.equals("initdb")) {
+            // TODO 有两个问题： 1 数据库问题是否必须系统异常并退出？ 2 这里应该有DatabaseFactory来处理，目前只支持Cassandra，就简单处理了。
+            try {
+                new CassandraSchema().initDatabase();
+                logger.info("........................... Segads initdb over ...........................");
+            } catch (DatabaseInstallFailedException e) {
+                logger.error("Init database fail！ Caused by {}", e.getMessage());
+                System.exit(-1); // 目前暂时简单处理，数据库连接断开不影响系统运行，但是数据库初始化异常则影响。
             }
         }
     }
@@ -117,11 +143,7 @@ public class Segads {
         @Parameter(names = "-h", description = "Help message.", help = true)
         private boolean help;
 
-        /**
-         * start is identical to run except that logging data only goes to the log file
-         * and not to standard out as well
-         */
-        @Parameter(names = "-c", description = "Command to run: export, import, run, start.")
+        @Parameter(names = "-c", description = "Command to run: export, import, run, start, initdb.")
         private String operationCommand;
 
     }

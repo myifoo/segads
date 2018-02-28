@@ -1,35 +1,26 @@
 package com.myitech.segads.core;
 
-import com.datastax.driver.core.Cluster;
-import com.datastax.driver.core.Session;
-import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.myitech.segads.Segads;
-import com.myitech.segads.binders.ApplicationBinder;
+import com.myitech.segads.core.binders.ApplicationBinder;
 import com.myitech.segads.core.events.LifeCycleEvent;
-import com.myitech.segads.datastore.Schema;
 import com.myitech.segads.exceptions.LifecycleException;
 import com.myitech.segads.utils.SegadsProperties;
-import org.apache.commons.lang.StringUtils;
 import org.glassfish.grizzly.http.server.HttpHandler;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.grizzly.http.server.StaticHttpHandler;
 import org.glassfish.hk2.api.PostConstruct;
-import org.glassfish.hk2.api.messaging.SubscribeTo;
-import org.glassfish.hk2.api.messaging.Topic;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
-import org.glassfish.jersey.internal.inject.InjectionManager;
 import org.glassfish.jersey.jettison.JettisonFeature;
 import org.glassfish.jersey.logging.LoggingFeature;
+import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.mvc.MvcFeature;
 import org.glassfish.jersey.server.mvc.freemarker.FreemarkerMvcFeature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
 import java.net.URI;
-import java.util.Properties;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -40,8 +31,10 @@ import java.util.TimerTask;
  */
 public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
     private static final String NAME = "WebServer";
-    private static WebServer server = null;
-    private static String BASE_URI = "http://localhost:80/segads/"; // Base URI the Grizzly HTTP server will listen on
+    /* Singleton */
+    private static WebServer server = new WebServer();
+    /* Base URI the Grizzly HTTP server will listen on */
+    private static String BASE_URI = "http://localhost:80/segads/";
     private static String PACKAGES_SCAN = "com.myitech.segads";
     private static String FREEMARKER_BASE = "freemarker";
     private static String HTML_BASE = "/html";
@@ -53,18 +46,12 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
     private int DELAY = 60*1000;
     private Timer timer;
 
-    private Properties properties;
-
     // 该方法不会被频繁调用，暂时不用同步处理
-    public static WebServer newInstance(Properties properties) {
-        if (server == null ) server = new WebServer(properties);
-
+    public static WebServer getInstance() {
         return server;
     }
 
-    private WebServer(Properties properties) {
-        this.properties = properties;
-        this.timer = new Timer("WebTimer");
+    private WebServer() {
     }
 
     @Override
@@ -72,26 +59,9 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
         // step 1: parse configuration
         logger.info("Start to parse and config Web Server ...");
         configParse();
-        // step 2: check database state
-        logger.info("Start to check the status of database ...");
 
-        // TODO 后续优化代码结构
-        String database = properties.getProperty(SegadsProperties.DATABASE);
-        String host = properties.getProperty(SegadsProperties.DATABASE_HOST);
-        if (StringUtils.equals(database, "cassandra")) {
-            try (
-                    Cluster cluster = new Cluster.Builder()
-                    .addContactPoint(host)
-                    .build()
-            ) {
-                Session session = cluster.connect("system_schema");
-                Schema.setupSchema(session); // TODO 考虑考虑放在这里是否合适
-                session.close();
-            } catch (Exception e) {
-                logger.error("Failed when check cassandra database status!");
-                throw new LifecycleException(e);
-            }
-        }
+        // TODO web server 是否应该关心 database 的状态？ 当 database 连接断开后，相关接口返回 HTTP-Internal Server Error 是不是更合理一些
+        // step 2: check database state
 
         // 注册为EventBus的订阅者
         Segads.register(this);
@@ -104,6 +74,7 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
     public void start() throws LifecycleException {
         logger.info("Start http server ... ");
 
+
         try {
             // create a resource config that scans for JAX-RS resources and providers
             final ResourceConfig rc = new ResourceConfig()
@@ -112,6 +83,8 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
                     .register(LoggingFeature.class)
                     .register(FreemarkerMvcFeature.class)
                     .register(JettisonFeature.class)
+                    .packages("org.glassfish.jersey.examples.multipart")
+                    .register(MultiPartFeature.class)
                     .registerInstances(new ApplicationBinder()); //
 
             // create and start a new instance of grizzly http server
@@ -123,10 +96,7 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
             HttpHandler handler = new StaticHttpHandler(htmlPath);
             httpServer.getServerConfiguration().addHttpHandler(handler, "/");
 
-//            InjectionManagerProvider.get
-
             logger.info("Jersey app started with WADL available at {} application.wadl\n ", BASE_URI);
-
         } catch (Exception e) {
             throw new LifecycleException(e); // just convert to self defined exception
         }
@@ -149,59 +119,58 @@ public class WebServer implements LifeCycle, Runnable, Server, PostConstruct{
                 return;
 
             try {
-                modStatus(Status.WAITING);
                 init();
-                modStatus(Status.INIT);
                 start();
-                logger.info("\n----------------- Segads WebServer started -----------------\n");
 
+                if (state.equals(State.STRUGGLING)) timer.cancel();
                 state = State.ACTIVE;
-                modStatus(Status.RUNNING);
-
-                timer.cancel();
+                logger.info("........................... Segads WebServer started ...........................");
             } catch (LifecycleException e) {
-                logger.error("Start WebServer failed ! \n{}", e.getMessage());
-                modStatus(Status.FAILED);
-                state = State.STRUGGLING;
+                logger.error("Start WebServer failed ! {}", e.getMessage());
                 struggle();
             }
         }
     }
 
     private void configParse() {
-        if (properties.getProperty(SegadsProperties.BASE_URI) != null) {
-            BASE_URI = properties.getProperty(SegadsProperties.BASE_URI);
+        if (Segads.getProperty(SegadsProperties.BASE_URI) != null) {
+            BASE_URI = Segads.getProperty(SegadsProperties.BASE_URI);
         }
 
-        if (properties.getProperty(SegadsProperties.FREEMARKER_BASE) !=  null)
-            FREEMARKER_BASE = properties.getProperty(SegadsProperties.FREEMARKER_BASE);
+        if (Segads.getProperty(SegadsProperties.FREEMARKER_BASE) !=  null)
+            FREEMARKER_BASE = Segads.getProperty(SegadsProperties.FREEMARKER_BASE);
 
-        if (properties.getProperty(SegadsProperties.HTML_BASE) != null)
-            HTML_BASE = properties.getProperty(SegadsProperties.HTML_BASE);
+        if (Segads.getProperty(SegadsProperties.HTML_BASE) != null)
+            HTML_BASE = Segads.getProperty(SegadsProperties.HTML_BASE);
     }
 
     public Status getStatus() {
         return status;
     }
 
-    /**
-     *  WebServer 是核心线程，当启动失败后，会延迟1分钟再次执行；
-     */
+    private void setStatus(Status status) {
+        this.status = status;
+    }
+
+    /* WebServer 是核心线程，当启动失败后，会延迟1分钟再次执行 */
     private void struggle() {
+        if (state == State.STRUGGLING)
+            return; // 避免重复调用
+
+        timer = new Timer("WebTimer");
         // 延迟一分钟重新执行
-        logger.warn("Struggle to start WebServer again 1 minute later ... ");
+        logger.warn("Struggle to start WebServer every 1 minute.");
         timer.schedule(new TimerTask() {
             @Override
             public void run() {
-                logger.warn("Start a new Thread.");
                 new Thread(server, NAME).start();
             }
-        }, DELAY);
+        }, DELAY, DELAY);
+
+        state = State.STRUGGLING;
     }
 
-    private void modStatus(Status status) {
-        this.status = status;
-    }
+
 
     @Override
     public void postConstruct() {

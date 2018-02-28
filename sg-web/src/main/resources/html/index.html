@@ -9,20 +9,125 @@
     <link href="css/zui.min.css" rel="stylesheet">
     <link href="css/segads.css" rel="stylesheet">
     <script type="text/javascript" src="js/jquery.js"></script>
+    <script type="text/javascript" src="js/highcharts.js"></script>
 
     <script type="text/javascript">
-        function help() {
-            $.ajax({
-                url: "/segads/help",
-                type: "GET",
-                success: function(result){
-                    $("#display_content").text("").append(result)
-                },
-                 error: function(error){
-                    console.log(error)
-                }
-            })
-       }
+         function push(args) {
+             var id = args[1];
+             var url = args[2];
+           $.getJSON(url, function (data) {
+                    params = {};
+                    params[id] = data;
+
+                    $.ajax({
+                        url: "/segads/data/update",
+                        type: "POST",
+                        data: JSON.stringify(params),
+                        contentType: 'application/json',
+                        success: function(result){
+                            console.log(result)
+                        },
+                         error: function(error){
+                            console.log(error)
+                        }
+                    })
+           })
+        }
+
+        function dispatcher(){
+            var args = $("#command_line").val().split(" ")
+            var action = args[0];
+
+            if (action == "push"){
+                push(args);
+            }
+            else if(action == "show") {
+                show(args);
+            }
+        }
+
+        function show(args){
+            var id = args[1]
+            var chart = null;
+            $.getJSON("/segads/data/"+id, function (data) {
+                chart = Highcharts.chart('data_container', {
+                    chart: {
+                        zoomType: 'x'
+                    },
+                    title: {
+                        text: '美元兑欧元汇率走势图'
+                    },
+                    subtitle: {
+                        text: document.ontouchstart === undefined ?
+                            '鼠标拖动可以进行缩放' : '手势操作进行缩放'
+                    },
+                    xAxis: {
+                        type: 'datetime',
+                        dateTimeLabelFormats: {
+                            millisecond: '%H:%M:%S.%L',
+                            second: '%H:%M:%S',
+                            minute: '%H:%M',
+                            hour: '%H:%M',
+                            day: '%m-%d',
+                            week: '%m-%d',
+                            month: '%Y-%m',
+                            year: '%Y'
+                        }
+                    },
+                    tooltip: {
+                        dateTimeLabelFormats: {
+                            millisecond: '%H:%M:%S.%L',
+                            second: '%H:%M:%S',
+                            minute: '%H:%M',
+                            hour: '%H:%M',
+                            day: '%Y-%m-%d',
+                            week: '%m-%d',
+                            month: '%Y-%m',
+                            year: '%Y'
+                        }
+                    },
+                    yAxis: {
+                        title: {
+                            text: '汇率'
+                        }
+                    },
+                    legend: {
+                        enabled: false
+                    },
+                    plotOptions: {
+                        area: {
+                            fillColor: {
+                                linearGradient: {
+                                    x1: 0,
+                                    y1: 0,
+                                    x2: 0,
+                                    y2: 1
+                                },
+                                stops: [
+                                    [0, Highcharts.getOptions().colors[0]],
+                                    [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                                ]
+                            },
+                            marker: {
+                                radius: 2
+                            },
+                            lineWidth: 1,
+                            states: {
+                                hover: {
+                                    lineWidth: 1
+                                }
+                            },
+                            threshold: null
+                        }
+                    },
+                    series: [{
+                        type: 'area',
+                        name: '美元兑欧元',
+                        data: data
+                    }]
+                });
+            });
+        }
     </script>
 </head>
 <body>
@@ -34,9 +139,9 @@
             <div style="width:500px;margin:0 auto" >
                 <h1 class="title" style="margin-bottom: 30px;color: #393d61e3">Hi, Segads!</h1>
                 <div class="input-group">
-                    <input type="text" class="form-control">
+                    <input id="command_line" type="text" class="form-control" value=""/>
                     <span class="input-group-btn">
-                        <button class="btn btn-primary" type="button" onclick="help();">run</button>
+                        <button class="btn btn-primary" type="button" onclick="dispatcher();">run</button>
                     </span>
                 </div>
             </div>
@@ -46,6 +151,8 @@
 
 <div id="display_content" class="content" style="margin-top: 30px; padding-top: 20px; margin-right:12%; margin-left:12%;">
 </div>
+
+<div id="data_container" style="height:400px; margin:0 auto"></div>
 <!-- 在此处编码你的创意 -->
 
 <!-- jQuery (ZUI中的Javascript组件依赖于jQuery) -->
