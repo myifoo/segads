@@ -112,11 +112,11 @@
             <version>20140107</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.github.lbordowitz.openforecast</groupId>
-            <artifactId>openforecast</artifactId>
-            <version>0.5.0</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>com.github.lbordowitz.openforecast</groupId>-->
+            <!--<artifactId>openforecast</artifactId>-->
+            <!--<version>0.5.0</version>-->
+        <!--</dependency>-->
 
         <!--Log-->
         <dependency>

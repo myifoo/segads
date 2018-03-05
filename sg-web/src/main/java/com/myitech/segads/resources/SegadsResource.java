@@ -2,7 +2,7 @@ package com.myitech.segads.resources;
 
 import com.myitech.segads.Segads;
 import com.myitech.segads.core.events.LifeCycleEvent;
-import com.myitech.segads.services.DatapointsService;
+import com.myitech.segads.services.DataService;
 import com.myitech.segads.services.SegadsService;
 import org.codehaus.jettison.json.JSONArray;
 import org.glassfish.jersey.server.mvc.Viewable;
@@ -25,7 +25,7 @@ public class SegadsResource {
     SegadsService segadsService;
 
     @Inject
-    DatapointsService datapointsService;
+    DataService datapointsService;
 
 
     @GET

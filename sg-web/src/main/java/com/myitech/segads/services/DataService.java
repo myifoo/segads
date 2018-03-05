@@ -1,6 +1,8 @@
 package com.myitech.segads.services;
 
-import com.myitech.segads.data.DataPoint;
+import com.myitech.segads.data.RecordValue;
+import net.sourceforge.openforecast.DataPoint;
+import net.sourceforge.openforecast.DataSet;
 import org.codehaus.jettison.json.JSONArray;
 
 import java.util.List;
@@ -10,7 +12,7 @@ import java.util.List;
  * <p>
  * Created by A.T on 2018/02/26
  */
-public interface DatapointsService {
+public interface DataService {
     enum TYPE {
         RAW("raw"),
         TEMP("temp");
@@ -34,7 +36,7 @@ public interface DatapointsService {
      * @param id record id in cassandra
      * @param type data points type : raw, ...
      */
-    void insert(List<DataPoint> timeseries, String id, TYPE type);
+    void insert(List<RecordValue> timeseries, String id, TYPE type);
 
     /**
      *  get all data points by id
@@ -43,4 +45,21 @@ public interface DatapointsService {
      * @return JSONObject
      */
     JSONArray get(String id);
+
+    /**
+     *  get all data points by id
+     *
+     * @param id table record id
+     * @return List
+     */
+    List<DataPoint> getList(String id);
+
+    /**
+     *
+     * @param id
+     * @return
+     */
+    DataSet getDataSet(String id);
+
+    void delete(String id);
 }

@@ -1,8 +1,7 @@
 package com.myitech.segads.services;
 
+import net.sourceforge.openforecast.DataSet;
 import org.codehaus.jettison.json.JSONObject;
-
-import java.util.Map;
 
 /**
  * Description:
@@ -11,11 +10,9 @@ import java.util.Map;
  */
 public interface ModelService {
     /**
-     *  创建模型
+     *  data focecast
      *
-     * @param ts 时间序列数据
-     * @param properties 建模参数
      * @return json 数据
      */
-    JSONObject build();
+    JSONObject forecast(DataSet sampleData, DataSet predictData, String forecastType);
 }

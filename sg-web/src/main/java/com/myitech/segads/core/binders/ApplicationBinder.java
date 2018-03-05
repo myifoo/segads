@@ -5,10 +5,12 @@ import com.myitech.segads.core.WebServer;
 import com.myitech.segads.core.db.CassandraDatastore;
 import com.myitech.segads.core.db.CassandraSchema;
 import com.myitech.segads.core.db.Datastore;
-import com.myitech.segads.services.DatapointsService;
+import com.myitech.segads.services.DataService;
+import com.myitech.segads.services.ModelService;
 import com.myitech.segads.services.SegadsService;
 import com.myitech.segads.services.SessionService;
-import com.myitech.segads.services.impl.DatapointsServiceImpl;
+import com.myitech.segads.services.impl.DataServiceImpl;
+import com.myitech.segads.services.impl.ModelServiceImpl;
 import com.myitech.segads.services.impl.SegadsServiceImpl;
 import com.myitech.segads.services.impl.SessionServiceImpl;
 import org.glassfish.hk2.api.messaging.TopicDistributionService;
@@ -28,7 +30,8 @@ public class ApplicationBinder extends AbstractBinder {
         bind(CassandraDatastore.class).to(Datastore.class).in(Singleton.class);
         bind(DefaultTopicDistributionService.class).to(TopicDistributionService.class).in(Singleton.class);
         bind(CassandraSchema.class).in(Singleton.class);
-        bind(DatapointsServiceImpl.class).to(DatapointsService.class).in(Singleton.class);
+        bind(DataServiceImpl.class).to(DataService.class).in(Singleton.class);
+        bind(ModelServiceImpl.class).to(ModelService.class).in(Singleton.class);
         bind(EventBus.class).in(Singleton.class);
         bind(WebServer.getInstance());
     }

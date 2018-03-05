@@ -75,15 +75,120 @@
 
 > show test
 
+### 1.2.3 forecast
+
+> forecast {"source_series_id": "test", "target_parameters": { "count": 10, "from": 1435622400000, "step": 86400000}}
+
 # 数据转换
 
 数据规范化、填充、筛除无效数据等等
+
+## /segads/data/aggregate
+
+数据聚集
+
+```json
+{
+  "pattern": 0,
+  "source": "test"
+}
+```
+
+> push week http://localhost/segads/data/aggregate?id=test&pattern=2
+
+1. pattern : enum Pattern {HOUR, DAY, WEEK, MONTH, YEAR}
+2. source : 数据 id；
+3. push : 将生成的数据 push 到数据库中，参数为数据 id；默认在 response 中返回；
 
 # 数据统计分析、建模与预测
 数据的统计描述
 时间序列建模：指数平滑，ARIMA
 数值预测
 数据更新后的模型优化
+
+## 数据预测
+
+### /model/forecast
+
+示例 1：
+```json
+{
+  "source_series": [
+                      [1, 1.1],
+                      [2, 2.1],
+                      [3, 5.2],
+                      [4, 1.5],
+                      [5, 3.15],
+                      [6, 2.5],
+                      [7, 7.5],
+                      [8, 2.5],
+                      [9, 5.5],
+                      [10, 8.5]
+                   ],
+  "source_type": "json", 
+  "target_parameters": {
+      "from": 8,
+      "step": 1,
+      "count": 5
+  },
+  "not_time_series":1
+}
+```
+
+示例 2：
+```json
+{
+  "source_series": [
+                      [1, 1.1],
+                      [2, 2.1],
+                      [3, 5.2],
+                      [4, 1.5],
+                      [5, 3.15],
+                      [6, 2.5],
+                      [7, 7.5],
+                      [8, 2.5],
+                      [9, 5.5],
+                      [10, 8.5]
+                   ],
+  "source_type": "json",
+  "not_time_series": true
+}
+```
+
+示例 3：
+```json
+{
+  "source_series_id": "test",
+  "target_parameters": {
+      "count": 10,
+      "from": 1435622400000,
+      "step": 86400000
+  }
+}
+```
+
+示例 4：
+```json
+{
+  "forecast_type": "SimpleExponentialSmoothingModel",
+  "source_series_id": "test",
+  "periods_per_year": 52
+}
+```
+
+optional property:
+1. type : 不配置时，默认由系统选择最佳的预测模型；
+2. source_type :  默认为 "db", 这时需要提供 "source_series_id"， 然后从数据库提取所需的数据；
+3. source_series : 当 source_type = "json" 时，需要配置该属性，类型为二维数组；
+4. target_parameters ： 用以生成预测数据的参数类型为 map； 默认使用 source DataSet，预测所有的值；
+5. periods_per_year : 
+6. not_time_series: 默认为时间序列数据，如果非时间序列，则需要设置该属性；
+
+required property:
+1. 
+
+
+预测结果
 
 
 
