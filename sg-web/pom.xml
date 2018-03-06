@@ -90,7 +90,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-math3</artifactId>
-            <version>3.2</version>
+            <version>3.6.1</version>
         </dependency>
 
         <dependency>
@@ -112,11 +112,11 @@
             <version>20140107</version>
         </dependency>
 
-        <!--<dependency>-->
-            <!--<groupId>com.github.lbordowitz.openforecast</groupId>-->
-            <!--<artifactId>openforecast</artifactId>-->
-            <!--<version>0.5.0</version>-->
-        <!--</dependency>-->
+        <dependency>
+            <groupId>com.github.lbordowitz.openforecast</groupId>
+            <artifactId>openforecast</artifactId>
+            <version>0.5.0</version>
+        </dependency>
 
         <!--Log-->
         <dependency>
